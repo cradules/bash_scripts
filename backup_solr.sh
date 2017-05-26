@@ -60,7 +60,7 @@ function cwdnr {
         fi	
 
 
-#Make sure you have enough space on cwd	
+#Make sure you have enough space on 
 
         if [[ $CWDGB -lt $SOLRGB ]]
                 then
