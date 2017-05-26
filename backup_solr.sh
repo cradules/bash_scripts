@@ -98,6 +98,8 @@ exec 1>&3 2>&4
 		cat $LOG
 	fi
 
+#Clean up
+
 rm $LOG
 
 	
