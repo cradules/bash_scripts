@@ -1,0 +1,1 @@
+docker run -d --name restreamer --restart always -e "RESTREAMER_USERNAME=cradulescu" -e "RESTREAMER_PASSWORD=Naminator912#$" -p 8080:8080 -v /var/lib/docker/volumes/restreamer/db:/restreamer/db datarhei/restreamer:latest
