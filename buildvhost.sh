@@ -65,10 +65,10 @@ COUNT=$(docker ps | grep $x | grep -c $y)
 
 	if [[ $(docker ps | grep $VHOST  | grep -m1 $DOCKERTYPE | awk '{print $12}' | awk -F '_' '{print $2}') = "machinery" ]]
 		then
-		CONF="/etc/httpd/conf.d/$x"mac".quanticedge.ro.conf"
+		CONF="./configs/$x"mac".quanticedge.ro.conf"
 	elif  [[ $(docker ps | grep $VHOST | grep -m1 $DOCKERTYPE | awk '{print $13}' | awk -F '_' '{print $2}') = "web" ]]
 		then
-		CONF="/etc/httpd/conf.d/$x.quanticedge.ro.conf"
+		CONF="./configs/$x.quanticedge.ro.conf"
 	fi
 
 	if [[ $COUNT -ne 1 ]]
