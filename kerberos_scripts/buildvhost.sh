@@ -128,7 +128,6 @@ URLWEB="http://$USER":"$PASS"@"$x"."quanticedge.ro"
 				sed -i "s/camnr/"$CAMNUM"/g" "$WORKINGDIR"/"$CAMNUM".txt
 				sed -i "s;CAMURL;"$URLWEB";g" "$WORKINGDIR"/"$CAMNUM".txt
 				sed -i "s;MACURL;"$URLMAC";g" "$WORKINGDIR"/"$CAMNUM".txt
-				cp "$DEFAULTINDEX" "$WORKINGDIR" 
 				cp $DEFAULTCAM   $SITE/"$CAMNUM".html
 				sed -i "s;MACURL;"$URLMAC";g" $SITE/"$CAMNUM".html
 			fi
@@ -137,7 +136,8 @@ URLWEB="http://$USER":"$PASS"@"$x"."quanticedge.ro"
 done < $VHOSTPORT
 	if [[ $DOCKERTYPE = "web" ]]
 		then
-		for w in `ls $WORKINGDIR`
+		cp "$DEFAULTINDEX" "$WORKINGDIR"
+		for w in `ls $WORKINGDIR | grep -v index`
 		do
 			sed -i "\$r $WORKINGDIR/$w" "$WORKINGDIR"/default.index.html
 		done
