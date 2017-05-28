@@ -41,7 +41,7 @@ DEFAULTCAM="../camera_console/default.cam.html"
 DEFAULTDIV="../camera_console/default.div.txt"
 SITE="../../"$VHOST"_site"
 WORKINGDIR="/tmp/divtemp"
-
+DNSTMP="/tmp/dnstmp"
 
 
 
@@ -62,7 +62,9 @@ WORKINGDIR="/tmp/divtemp"
 		#Read vhost and ports for machinery
 		docker ps | grep  $VHOST | grep $DOCKERTYPE | awk '{print $12}' | awk -F '_' '{print $1}'  >> $VHOSTTMP 
 		docker ps | grep  $VHOST | grep $DOCKERTYPE | awk '{print $11}' | awk -F ':' '{print $2}' | awk -F '-' '{print $1}' >> $PORTTMP
-	elif [[ $(docker ps | grep $VHOST | grep -m1 $DOCKERTYPE | awk '{print $13}' | awk -F '_' '{print $2}') = "web" ]]
+	fi
+	
+	if [[ $(docker ps | grep $VHOST | grep -m1 $DOCKERTYPE | awk '{print $13}' | awk -F '_' '{print $2}') = "web" ]]
 		then
 		#Read vhost and ports for web
 		docker ps | grep $VHOST | grep $DOCKERTYPE | awk '{print $13}' | awk -F '_' '{print $1}' >> $VHOSTTMP
@@ -81,10 +83,14 @@ done < $VHOSTTMP 3<$PORTTMP
 while read -r x y 
 do
 COUNT=$(docker ps | grep $x | grep -c $y)
+
 CAMNUM=$(echo ${x: -5})
+
 CAMUP="$(echo $CAMNUM | tr '[:lower:]' '[:upper:]')"
 URLMAC="http://$USER":"$PASS"@"$x"mac".quanticedge.ro"
 URLWEB="http://$USER":"$PASS"@"$x"."quanticedge.ro"
+MACDNS="$x"mac".quanticedge.ro"
+WEBDNS="$x"."quanticedge.ro"
 
 #Define conf
 
@@ -104,7 +110,14 @@ URLWEB="http://$USER":"$PASS"@"$x"."quanticedge.ro"
 		exit 1
 	else
 		cp $DEFAULTCONF $CONF
-		sed -i "s/\<sid\>/$x/g" $CONF 
+			if [[ $(docker ps | grep $VHOST | grep -m1 $DOCKERTYPE | awk '{print $13}' | awk -F '_' '{print $2}') = "web" ]]
+				then
+				sed -i "s/\<sid\>/$x/g" $CONF
+		 
+			elif [[ $(docker ps | grep $VHOST  | grep -m1 $DOCKERTYPE | awk '{print $12}' | awk -F '_' '{print $2}') = "machinery" ]]
+				then
+				sed -i "s/\<sid\>/"$x"mac/g" $CONF
+			fi
 		sed -i "s/\<sidport\>/$y/g" $CONF
 		mv -f "$CONF" /etc/httpd/conf.d/
 			
@@ -116,6 +129,7 @@ URLWEB="http://$USER":"$PASS"@"$x"."quanticedge.ro"
 						then
 						mkdir $SITE
 					fi
+						
 					if [[ ! -d $WORKINGDIR ]]
 						then 
 						mkdir $WORKINGDIR
@@ -130,6 +144,9 @@ URLWEB="http://$USER":"$PASS"@"$x"."quanticedge.ro"
 				sed -i "s;MACURL;"$URLMAC";g" "$WORKINGDIR"/"$CAMNUM".txt
 				cp $DEFAULTCAM   $SITE/"$CAMNUM".html
 				sed -i "s;MACURL;"$URLMAC";g" $SITE/"$CAMNUM".html
+#DNS
+				echo $MACDNS >> $DNSTMP
+				echo $WEBDNS >> $DNSTMP 
 			fi
 
 	fi
@@ -147,9 +164,15 @@ done < $VHOSTPORT
 		cp $WORKINGDIR/default.index.html $SITE/index.html
 		tar -cf $SITE"."tar $SITE 2>/dev/null
 		echo "Site archive ready for download $SITE"."tar"
+		echo "Setup a CNAME to point on $HOSTNAME.quanticedge.ro for next DNS entries:"
+		cat $DNSTMP
 	fi
 
+
 #Clean up
-rm $VHOSTTMP $PORTTMP $VHOSTPORT $VHOSTINPUT $DOCKERINPUT $USERINPUT $PASSINPUT 
-rm -rf $WORKINGDIR
-rm -rf $SITE
+rm $VHOSTTMP $PORTTMP $VHOSTPORT $VHOSTINPUT $DOCKERINPUT $USERINPUT $PASSINPUT $DNSTMP 2>/dev/null 
+rm -rf $WORKINGDIR 2>/dev/null
+rm -rf $SITE 2>/dev/null
+
+systemctl restart httpd
+
