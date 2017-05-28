@@ -60,7 +60,6 @@ done < $VHOSTTMP 3<$PORTTMP
 
 while read -r x y 
 do
-echo $x $y
 COUNT=$(docker ps | grep $x | grep -c $y)
 
 	if [[ $(docker ps | grep $VHOST  | grep -m1 $DOCKERTYPE | awk '{print $12}' | awk -F '_' '{print $2}') = "machinery" ]]
@@ -79,7 +78,7 @@ COUNT=$(docker ps | grep $x | grep -c $y)
 		cp $DEFAULTCONF $CONF
 		sed -i "s/\<sid\>/$x/g" $CONF 
 		sed -i "s/\<sidport\>/$y/g" $CONF
-		mv $CONF /etc/http/conf.d/
+		mv -f "$CONF" /etc/httpd/conf.d/
 
 	fi
 done < $VHOSTPORT
