@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+#set -x
 
 ############################################################################################
 #Author: Constantin Radulescu
@@ -8,7 +8,7 @@ set -x
 ###########################################################################################
 
 
-VHOSINPUT="/tmp/vhostinput.txt"
+VHOSTINPUT="/tmp/vhostinput.txt"
 DOCKERINPUT="/tmp/dockertinput.txt"
 USERINPUT="/tmp/userinput.txt"
 PASSINPUT="/tmp/passinput.txt"
@@ -20,7 +20,7 @@ PASSINPUT="/tmp/passinput.txt"
                 echo "Illegal number of parameters"
                 exit 1
         else
-                echo $1 > $VHOSINPUT
+                echo $1 > $VHOSTINPUT
                 echo $2 > $DOCKERINPUT
 		echo $3 > $USERINPUT
 		echo $4 > $PASSINPUT
@@ -29,7 +29,7 @@ PASSINPUT="/tmp/passinput.txt"
 
 USER=$(cat $USERINPUT)
 PASS=$(cat $PASSINPUT)
-VHOST=$(cat $VHOSINPUT)
+VHOST=$(cat $VHOSTINPUT)
 DOCKERTYPE=$(cat $DOCKERINPUT)
 DATE=$(date +%d-%m-%y_%T)
 VHOSTTMP="/tmp/vhost_$DATE"
@@ -115,7 +115,8 @@ URLWEB="http://$USER":"$PASS"@"$x"."quanticedge.ro"
 					if [[ ! -d $SITE ]]
 						then
 						mkdir $SITE
-					elif [[ ! -d $WORKINGDIR ]]
+					fi
+					if [[ ! -d $WORKINGDIR ]]
 						then 
 						mkdir $WORKINGDIR
 				
@@ -134,18 +135,21 @@ URLWEB="http://$USER":"$PASS"@"$x"."quanticedge.ro"
 
 	fi
 done < $VHOSTPORT
+	if [[ $DOCKERTYPE = "web" ]]
+		then
+		for w in `ls $WORKINGDIR`
+		do
+			sed -i "\$r $WORKINGDIR/$w" "$WORKINGDIR"/default.index.html
+		done
 
-	for w in `ls /tmp/divtemp/`
-	do
-		sed -i "\$r $WORKINGDIR/$w" "$WORKINGDIR"/default.index.html
-	done
-
-	sed  -i '$i</body>' $WORKINGDIR/default.index.html
-	sed  -i '$i</html>' $WORKINGDIR/default.index.html
-	cp $WORKINGDIR/default.index.html $SITE/index.html
-
-
+		sed  -i '$i</body>' $WORKINGDIR/default.index.html
+		sed  -i '$i</html>' $WORKINGDIR/default.index.html
+		cp $WORKINGDIR/default.index.html $SITE/index.html
+		tar -cf $SITE"."tar $SITE 2>/dev/null
+		echo "Site archive ready for download $SITE"."tar"
+	fi
 
 #Clean up
-rm $VHOSTTMP $PORTTMP $VHOSTPORT $VHOSINPUT $DOCKERINPUT $USERINPUT $PASSINPUT 
+rm $VHOSTTMP $PORTTMP $VHOSTPORT $VHOSTINPUT $DOCKERINPUT $USERINPUT $PASSINPUT 
 rm -rf $WORKINGDIR
+rm -rf $SITE
