@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -x
+set -x
 
 ############################################################################################
 #Author: Constantin Radulescu
@@ -7,20 +7,41 @@
 #Function: Reading machinery kerberos.io and build the vhost
 ###########################################################################################
 
-VHOST=$1
-DOCKERTYPE=$2
+
+VHOSINPUT="/tmp/vhostinput.txt"
+DOCKERINPUT="/tmp/dockertinput.txt"
+USERINPUT="/tmp/userinput.txt"
+PASSINPUT="/tmp/passinput.txt"
+
+
+#Check number of arguments
+        if [[ "$#" -ne 4 ]]
+                then
+                echo "Illegal number of parameters"
+                exit 1
+        else
+                echo $1 > $VHOSINPUT
+                echo $2 > $DOCKERINPUT
+		echo $3 > $USERINPUT
+		echo $4 > $PASSINPUT
+        fi
+
+
+USER=$(cat $USERINPUT)
+PASS=$(cat $PASSINPUT)
+VHOST=$(cat $VHOSINPUT)
+DOCKERTYPE=$(cat $DOCKERINPUT)
 DATE=$(date +%d-%m-%y_%T)
 VHOSTTMP="/tmp/vhost_$DATE"
 PORTTMP="/tmp/port_$DATE"
 VHOSTPORT="/tmp/vhostport_$DATE"
 DEFAULTCONF="../configs/default.quanticedge.ro.conf.orig"
+DEFAULTINDEX="../camera_console/default.index.html"
+DEFAULTCAM="../camera_console/default.cam.html"
+DEFAULTDIV="../camera_console/default.div.txt"
+SITE="../../"$VHOST"_site/"
+WORKINGDIR="/tmp/divtemp/"
 
-#Check number of arguments
-	if [[ "$#" -ne 2 ]]
-		then
-		echo "Illegal number of parameters"
-		exit 1
-	fi
 
 
 
@@ -56,11 +77,16 @@ echo "$a $b" >> $VHOSTPORT
 done < $VHOSTTMP 3<$PORTTMP 
 
 
-#Check if the list is valid:
 
 while read -r x y 
 do
 COUNT=$(docker ps | grep $x | grep -c $y)
+CAMNUM=$(echo ${x: -5})
+CAMUP="$(echo $CAMNUM | tr '[:lower:]' '[:upper:]')"
+URLMAC="http://$USER":"$PASS"@"$x"mac".quanticedge.ro"
+URLWEB="http://$USER":"$PASS"@"$x"."quanticedge.ro"
+
+#Define conf
 
 	if [[ $(docker ps | grep $VHOST  | grep -m1 $DOCKERTYPE | awk '{print $12}' | awk -F '_' '{print $2}') = "machinery" ]]
 		then
@@ -69,6 +95,8 @@ COUNT=$(docker ps | grep $x | grep -c $y)
 		then
 		CONF="../configs/$x.quanticedge.ro.conf"
 	fi
+
+#Build conf
 
 	if [[ $COUNT -ne 1 ]]
 		then
@@ -79,6 +107,28 @@ COUNT=$(docker ps | grep $x | grep -c $y)
 		sed -i "s/\<sid\>/$x/g" $CONF 
 		sed -i "s/\<sidport\>/$y/g" $CONF
 		mv -f "$CONF" /etc/httpd/conf.d/
+			
+#Build site
+
+			if [[ $DOCKERTYPE = "web" ]]
+				then
+					if [[ ! -d $SITE ]]
+						then
+						mkdir $SITE
+						mkdir $WORKINGDIR
+				
+					fi
+				
+
+				cp $DEFAULTDIV "$WORKINGDIR"/"$CAMNUM".txt
+				sed -i "s/CAMNR/"$CAMUP"/g" "$WORKINGDIR"/"$CAMNUM".txt
+				sed -i "s/camnr/"$CAMNUM"/g" "$WORKINGDIR"/"$CAMNUM".txt
+				sed -i "s;CAMURL;"$URLWEB";g" "$WORKINGDIR"/"$CAMNUM".txt
+				sed -i "s;MACURL;"$URLMAC";g" "$WORKINGDIR"/"$CAMNUM".txt
+				
+				cp $DEFAULTCAM   $SITE/"$CAMNUM".html
+				sed -i "s;MACURL;"$URLMAC";g" $SITE/"$CAMNUM".html
+			fi
 
 	fi
 done < $VHOSTPORT
@@ -86,4 +136,4 @@ done < $VHOSTPORT
 
 
 #Clean up
-rm $VHOSTTMP $PORTTMP $VHOSTPORT
+rm $VHOSTTMP $PORTTMP $VHOSTPORT $VHOSINPUT $DOCKERINPUT $USERINPUT $PASSINPUT 
