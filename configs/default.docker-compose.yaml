@@ -1,0 +1,17 @@
+machinery:
+         image: kerberos/machinery
+         mem_limit: 512m
+         ports:
+         - "macport:8889"
+         restart: on-failure
+web:
+        image: kerberos/web
+        mem_limit: 512m
+        ports:
+        - "webport:80"
+        restart: on-failure
+        volumes_from:
+        - machinery
+        links:
+        - machinery
+
