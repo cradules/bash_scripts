@@ -39,8 +39,8 @@ DEFAULTCONF="../configs/default.quanticedge.ro.conf.orig"
 DEFAULTINDEX="../camera_console/default.index.html"
 DEFAULTCAM="../camera_console/default.cam.html"
 DEFAULTDIV="../camera_console/default.div.txt"
-SITE="../../"$VHOST"_site/"
-WORKINGDIR="/tmp/divtemp/"
+SITE="../../"$VHOST"_site"
+WORKINGDIR="/tmp/divtemp"
 
 
 
@@ -115,6 +115,8 @@ URLWEB="http://$USER":"$PASS"@"$x"."quanticedge.ro"
 					if [[ ! -d $SITE ]]
 						then
 						mkdir $SITE
+					elif [[ ! -d $WORKINGDIR ]]
+						then 
 						mkdir $WORKINGDIR
 				
 					fi
@@ -125,7 +127,7 @@ URLWEB="http://$USER":"$PASS"@"$x"."quanticedge.ro"
 				sed -i "s/camnr/"$CAMNUM"/g" "$WORKINGDIR"/"$CAMNUM".txt
 				sed -i "s;CAMURL;"$URLWEB";g" "$WORKINGDIR"/"$CAMNUM".txt
 				sed -i "s;MACURL;"$URLMAC";g" "$WORKINGDIR"/"$CAMNUM".txt
-				
+				cp "$DEFAULTINDEX" "$WORKINGDIR" 
 				cp $DEFAULTCAM   $SITE/"$CAMNUM".html
 				sed -i "s;MACURL;"$URLMAC";g" $SITE/"$CAMNUM".html
 			fi
@@ -133,7 +135,17 @@ URLWEB="http://$USER":"$PASS"@"$x"."quanticedge.ro"
 	fi
 done < $VHOSTPORT
 
+	for w in `ls /tmp/divtemp/`
+	do
+		sed -i "\$r $WORKINGDIR/$w" "$WORKINGDIR"/default.index.html
+	done
+
+	sed  -i '$i</body>' $WORKINGDIR/default.index.html
+	sed  -i '$i</html>' $WORKINGDIR/default.index.html
+	cp $WORKINGDIR/default.index.html $SITE/index.html
+
 
 
 #Clean up
 rm $VHOSTTMP $PORTTMP $VHOSTPORT $VHOSINPUT $DOCKERINPUT $USERINPUT $PASSINPUT 
+rm -rf $WORKINGDIR
