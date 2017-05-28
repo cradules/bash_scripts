@@ -13,7 +13,7 @@ DATE=$(date +%d-%m-%y_%T)
 VHOSTTMP="/tmp/vhost_$DATE"
 PORTTMP="/tmp/port_$DATE"
 VHOSTPORT="/tmp/vhostport_$DATE"
-DEFAULTCONF="/etc/httpd/conf.d/default.quanticedge.ro.conf.orig"
+DEFAULTCONF="../configs/default.quanticedge.ro.conf.orig"
 
 #Check number of arguments
 	if [[ "$#" -ne 2 ]]
@@ -79,6 +79,7 @@ COUNT=$(docker ps | grep $x | grep -c $y)
 		cp $DEFAULTCONF $CONF
 		sed -i "s/\<sid\>/$x/g" $CONF 
 		sed -i "s/\<sidport\>/$y/g" $CONF
+		mv $CONF /etc/http/conf.d/
 
 	fi
 done < $VHOSTPORT
