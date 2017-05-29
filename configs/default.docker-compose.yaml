@@ -3,6 +3,8 @@ machinery:
          mem_limit: 512m
          ports:
          - "macport:8889"
+         volumes:
+         - /docker/clientsid/camnr/:/etc/opt/kerberosio/capture
          restart: on-failure
 web:
         image: kerberos/web
