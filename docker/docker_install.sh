@@ -56,6 +56,12 @@ systemctl enable docker
 #Start Docker
 systemctl start docker
 
+#Install pip
+yum install python2-pip
+pip install --upgrade pip
+
+#Install docker-compose
+pip install docker-compose
 exec 1>&3 2>&4
 echo -ne '##############################  (100%)\r'
 sleep 1
