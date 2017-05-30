@@ -7,29 +7,22 @@
 #Function: Reading machinery kerberos.io and build the vhost
 ###########################################################################################
 
-
-VHOSTINPUT="/tmp/vhostinput.txt"
 DOCKERINPUT="/tmp/dockertinput.txt"
-USERINPUT="/tmp/userinput.txt"
-PASSINPUT="/tmp/passinput.txt"
 
 
 #Check number of arguments
-        if [[ "$#" -ne 4 ]]
+        if [[ "$#" -ne 1 ]]
                 then
                 echo "Illegal number of parameters"
                 exit 1
         else
-                echo $1 > $VHOSTINPUT
-                echo $2 > $DOCKERINPUT
-		echo $3 > $USERINPUT
-		echo $4 > $PASSINPUT
+                echo $1 > $DOCKERINPUT
         fi
 
-
-USER=$(cat $USERINPUT)
-PASS=$(cat $PASSINPUT)
-VHOST=$(cat $VHOSTINPUT)
+CONGIF="../configs/kerberos.conf"
+USER=$(cat /root/.passhttp | awk '{print $1}')
+PASS=$(cat /root/.passhttp | awk '{print $2}')
+VHOST=`echo $(cat $CONGIF | awk '{print $1}')`
 DOCKERTYPE=$(cat $DOCKERINPUT)
 DATE=$(date +%d-%m-%y_%T)
 VHOSTTMP="/tmp/vhost_$DATE"
@@ -47,28 +40,29 @@ DNSTMP="/tmp/dnstmp"
 
 #Check if first given parameter has a match
 
-	if [[ $(docker ps | grep -c $VHOST) -eq 0 ]]
+	if [[ $(docker ps | grep -c "$VHOST") -eq 0 ]]
 		then
-		echo "First given parameter $VHOST could not be found .. exiting"
+		echo "First given parameter "$VHOST" could not be found .. exiting"
 		exit 1
-	elif [[ $(docker ps | grep -c $DOCKERTYPE) -eq 0 ]]
+	elif [[ $(docker ps | grep -c "$DOCKERTYPE") -eq 0 ]]
 		then 
-		echo "Secound given parameter $DOCKERTYPE could not be found .. exiting"
+		echo "Secound given parameter "$DOCKERTYPE" could not be found .. exiting"
 	fi
 	
 
-	if [[ $(docker ps | grep $VHOST | grep -m1 $DOCKERTYPE | awk '{print $12}' | awk -F '_' '{print $2}' ) = "machinery" ]]
+	if [[ $(docker ps -a | grep -e "$VHOST" | grep "$DOCKERTYPE" | grep "0.0.0.0" | awk '{print $(NF-0)}' | awk -F "_" '{print $2}' | tail -1) = "machinery" ]]
 		then
 		#Read vhost and ports for machinery
-		docker ps | grep  $VHOST | grep $DOCKERTYPE | awk '{print $12}' | awk -F '_' '{print $1}'  >> $VHOSTTMP 
-		docker ps | grep  $VHOST | grep $DOCKERTYPE | awk '{print $11}' | awk -F ':' '{print $2}' | awk -F '-' '{print $1}' >> $PORTTMP
+		docker ps -a | grep "$VHOST" | grep "$DOCKERTYPE"| grep "0.0.0.0" | awk '{print $(NF-0)}' | awk -F "_" '{print $1}'  >> $VHOSTTMP 
+		docker ps -a | grep "$VHOST"| grep "$DOCKERTYPE"| grep "0.0.0.0" | awk '{print $(NF-1)}' | awk -F ':' '{print $2}' | awk -F '-' '{print $1}' >> $PORTTMP
+		CONF="../configs/$x"mac".quanticedge.ro.conf"
 	fi
 	
-	if [[ $(docker ps | grep $VHOST | grep -m1 $DOCKERTYPE | awk '{print $13}' | awk -F '_' '{print $2}') = "web" ]]
+	if [[ $(docker ps -a | grep -e "$VHOST" | grep "$DOCKERTYPE" | grep "0.0.0.0" | awk '{print $(NF-0)}' | awk -F "_" '{print $2}' | head -1) = "web" ]]
 		then
 		#Read vhost and ports for web
-		docker ps | grep $VHOST | grep $DOCKERTYPE | awk '{print $13}' | awk -F '_' '{print $1}' >> $VHOSTTMP
-		docker ps | grep $VHOST | grep $DOCKERTYPE | awk '{print $12}' | awk -F ':' '{print $2}' | awk -F '-' '{print $1}' >> $PORTTMP
+		docker ps -a | grep "$VHOST" | grep "$DOCKERTYPE"| grep "0.0.0.0" | awk '{print $(NF-0)}' | awk -F "_" '{print $1}' >> $VHOSTTMP
+		docker ps -a | grep "$VHOST"| grep "$DOCKERTYPE"| grep "0.0.0.0" | awk '{print $(NF-1)}' | awk -F ':' '{print $2}' | awk -F '-' '{print $1}' >> $PORTTMP
 	fi 
 
 
@@ -94,10 +88,10 @@ WEBDNS="$x"."quanticedge.ro"
 
 #Define conf
 
-	if [[ $(docker ps | grep $VHOST  | grep -m1 $DOCKERTYPE | awk '{print $12}' | awk -F '_' '{print $2}') = "machinery" ]]
+	if [[ $(docker ps -a | grep -e "$VHOST" | grep "$DOCKERTYPE" | grep "0.0.0.0" | awk '{print $(NF-0)}' | awk -F "_" '{print $2}' | tail -1) = "machinery" ]]
 		then
 		CONF="../configs/$x"mac".quanticedge.ro.conf"
-	elif  [[ $(docker ps | grep $VHOST | grep -m1 $DOCKERTYPE | awk '{print $13}' | awk -F '_' '{print $2}') = "web" ]]
+	elif [[ $(docker ps -a | grep -e "$VHOST" | grep "$DOCKERTYPE" | grep "0.0.0.0" | awk '{print $(NF-0)}' | awk -F "_" '{print $2}' | head -1) = "web" ]] 
 		then
 		CONF="../configs/$x.quanticedge.ro.conf"
 	fi
@@ -110,11 +104,11 @@ WEBDNS="$x"."quanticedge.ro"
 		exit 1
 	else
 		cp $DEFAULTCONF $CONF
-			if [[ $(docker ps | grep $VHOST | grep -m1 $DOCKERTYPE | awk '{print $13}' | awk -F '_' '{print $2}') = "web" ]]
+			if [[ $(docker ps -a | grep -e "$VHOST" | grep "$DOCKERTYPE" | grep "0.0.0.0" | awk '{print $(NF-0)}' | awk -F "_" '{print $2}' | head -1) = "web" ]] 
 				then
 				sed -i "s/\<sid\>/$x/g" $CONF
 		 
-			elif [[ $(docker ps | grep $VHOST  | grep -m1 $DOCKERTYPE | awk '{print $12}' | awk -F '_' '{print $2}') = "machinery" ]]
+			elif [[ $(docker ps -a | grep -e "$VHOST" | grep "$DOCKERTYPE" | grep "0.0.0.0" | awk '{print $(NF-0)}' | awk -F "_" '{print $2}' | tail -1) = "machinery" ]] 
 				then
 				sed -i "s/\<sid\>/"$x"mac/g" $CONF
 			fi
@@ -170,7 +164,7 @@ done < $VHOSTPORT
 
 
 #Clean up
-rm $VHOSTTMP $PORTTMP $VHOSTPORT $VHOSTINPUT $DOCKERINPUT $USERINPUT $PASSINPUT $DNSTMP 2>/dev/null 
+rm -f $VHOSTTMP $PORTTMP $VHOSTPORT $VHOSTINPUT $DOCKERINPUT $USERINPUT $PASSINPUT $DNSTMP 2>/dev/null 
 rm -rf $WORKINGDIR 2>/dev/null
 rm -rf $SITE 2>/dev/null
 
