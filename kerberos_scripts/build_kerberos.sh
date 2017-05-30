@@ -67,7 +67,7 @@ done
 
 #Build site
 
-for n in cam web
+for n in mac web
 do
 ./buildvhost.sh $n
 done
