@@ -39,12 +39,13 @@ mount -a
 for ((y=0;y<$NUMBERSOFCAM;y++))
 	do
  	function LASTPORTGIVEN () {
-	echo $(docker ps -a | grep -e web -e mac | awk '{print $11 $12}' | awk -F ':' '{print $2}' | awk -F '-' '{print $1}' | sort -n | tail -1)
+	#echo $(docker ps -a | grep -e web -e mac | awk '{print $11 $12}' | awk -F ':' '{print $2}' | awk -F '-' '{print $1}' | sort -n | tail -1)
+	echo $(docker ps -a | grep -e web -e mac | grep "0.0.0.0" | awk '{print $(NF-1)}' | awk -F ':' '{print $2}' | awk -F '-' '{print $1}'| sort -n | tail -1)
 }
 LASTPORTGIVEN
 
 CAM=`echo $((y+1))`
-	if [[ $(LASTPORTGIVEN) -lt 3700 ]]
+	if [[ $(LASTPORTGIVEN) -le "3700" ]]
 		then
 		MACPORT=$((3700+1))
 	else
@@ -64,3 +65,9 @@ sleep 15
 rm $KERCONF
 done
 
+#Build site
+
+for n in cam web
+do
+./buildvhost.sh $n
+done
