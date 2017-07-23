@@ -130,16 +130,16 @@ rsync -aP $COREPATH $TARGETPATH
 			rm -rf  $TARGETPATH/$y/index
 	
 	
-			if [[ ! -d $TARGETPATH/$y/conf ]]
-				then
-				rsync -aP /hybris/solr/server/solr/configsets/default/conf/ $TARGETPATH/$y/conf/
-			fi
+			#if [[ ! -d $TARGETPATH/$y/conf ]]
+				#then
+				#rsync -aP /hybris/solr/server/solr/configsets/default/conf/ $TARGETPATH/$y/conf/
+			#fi
 
-			echo "name=$y" > $TARGETPATH/$y/conf/core.properties
-			echo "configSet=default" >> $TARGETPATH/$y/conf/core.properties
+			echo "name=$y" > $TARGETPATH/$y/core.properties
+			echo "configSet=default" >> $TARGETPATH/$y/core.properties
 			#echo "schema=schema.xml" >> $TARGETPATH/$y/core.properties
 			#echo "dataDir=data" >> $TARGETPATH/$y/core.properties
-			solr-tools/upgradeindex/upgradeindex.sh -s -t $TARGETVERS $TARGETPATH/$y
+			upgradeindex/upgradeindex.sh -s -t $TARGETVERS $TARGETPATH/$y
 		fi
 		done
 
