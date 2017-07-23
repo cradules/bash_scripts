@@ -109,7 +109,7 @@ echo " "
 		do
     			read -p "Solr services are going to be stoped. Do you wish to continue?" yn
     				case $yn in
-        			[Yy]* ) /etc/init.d/solr stop; break;;
+        			[Yy]* ) sudo /etc/init.d/solr stop; break;;
 				[Nn]* ) echo "Exiting..."; exit;;
         			* ) echo "Please answer yes or no.";;
     			esac
@@ -151,4 +151,4 @@ rsync -aP $COREPATH $TARGETPATH
 		done
 
 #START SOLR
-/etc/init.d/solr start
+sudo /etc/init.d/solr start
