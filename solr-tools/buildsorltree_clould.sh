@@ -146,6 +146,7 @@ rsync -aP $COREPATH $TARGETPATH
 			echo "configSet=default" >> $TARGETPATH/$y/core.properties
 			echo "collection.configName=default" >> $TARGETPATH/$y/core.properties
 			echo "coreNodeName=core_node$MYID" >> $TARGETPATH/$y/core.properties
+			echo "numShards=1" >> $TARGETPATH/$y/core.properties
 			upgradeindex/upgradeindex.sh -s -t $TARGETVERS $TARGETPATH/$y
 		fi
 		done
