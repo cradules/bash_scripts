@@ -18,7 +18,7 @@ trap 'exec 2>&4 1>&3' 0 1 2 3
 exec 1>$LOG 2>&1
 
 
-yum remove docker docker-common container-selinux docker-selinux docker-engine
+yum remove -y docker docker-common container-selinux docker-selinux docker-engine
 
 exec 1>&3 2>&4
 echo -ne '#####                     (25%)\r'
