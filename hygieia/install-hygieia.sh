@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -x
+set -x
 
 
 
@@ -13,15 +13,36 @@ VGNAME=vghygieia
 LVNAME=lvhygieia
 GITSOURCE="https://github.com/capitalone/Hygieia.git"
 ENCRYPTORPASSWORD="hygieiasecret"
+CDISK=$(ls -al /dev/ | grep -c $DISK 2> /dev/null) 
 
 
 disksize() { 
 
 pvdisplay /dev/$DISK | grep "PV Size" | awk '{print $3}' | awk -F '.' '{print $1}'
 }
+#Check user
+	if [[ $EUID -ne 0 ]]
+		then 
+		echo "This script must be run as root!" 
+		exit 1
+	fi 
+#Check argument
+
+	if [[ $# -ne 1 && $1 != "nodisk" ]]
+		then
+		echo "Usage : $0 <disk-name>|nodisk"
+		echo "disk-name = a free present disk"
+		echo "nodisk = the install will not me made on an individual file-system"
+		exit 1
+	fi
+	if [[ $CDISK -eq 0 && $1 != "nodisk" ]]
+		then
+		echo "Disk not found"
+		exit 1
+	fi
 
 #Create mount point
-	if [[ $(grep -c $LVNAME /etc/mtab) -eq 0 ]]
+	if [[ $(grep -c $LVNAME /etc/mtab) -eq 0 && $CDISK -eq 1 ]]
 		then
 		echo "Creating filesystem for Hygiei"
 		mkdir -p -m 400 $INSTALLPATH 
@@ -36,11 +57,17 @@ pvdisplay /dev/$DISK | grep "PV Size" | awk '{print $3}' | awk -F '.' '{print $1
 		echo $RC
 		if [[ $RC -eq 0 ]]
 			then
+			chown $USER:$USER $INSTALLPATH
 			echo "File-system mounted"
 		else
 			"ERROR..I could not mount the file-system"
 		fi
 	else
+		if [[ ! -d $INSTALLPATH ]]
+			then
+			mkdir -p $INSTALLPATH
+			chown $USER:$USER $INSTALLPATH
+		fi
 		echo "File-system already exist"
 	fi
 
@@ -52,13 +79,13 @@ RC=$(echo $?)
 		echo "Adding user $USER"
 		adduser $USER
 		#Setting owner and permisions
-		chown $USER:$USER $INSTALLPATH
 		
 	else
 		echo "User $USER already exist"
 	fi
+
 #Setting owner and permisions
-                chown $USER:$USER $INSTALLPATH
+                chown -R $USER:$USER $INSTALLPATH
 
 #Install git
 	if [[ $(rpm -qa | grep -w -c git) -ne 1 ]]
@@ -128,8 +155,14 @@ mvn --version
 	if [ "$(ls -A $INSTALLPATH)" ]
 		then
 		echo "$INSTALLPATH not empty"
+		exit 1
 	else
         	su -c "git clone $GITSOURCE $INSTALLPATH" $USER
+		#Setup binary
+		mkdir -p $INSTALLPATH/bin
+		chown $USER:$USER $INSTALLPATH/bin
+		cp ./initapi.sh $INSTALLPATH/bin
+
 	fi
 
 
@@ -148,6 +181,7 @@ chmod +x $INSTALLPATH/UI/installUI.sh
 chown $USER $INSTALLPATH/UI/installUI.sh
 cd $INSTALLPATH/UI/
 su -c "./installUI.sh" $USER
+rm -f ./installUI.sh
 
 echo "UI install done"
 
@@ -163,6 +197,7 @@ chmod +x $INSTALLPATH//install.sh
 chown $USER $INSTALLPATH/install.sh
 cd $INSTALLPATH
 su -c "./install.sh" $USER
+rm -f ./install.sh
 
 echo "Full install done"
 
@@ -192,14 +227,16 @@ auth.authenticationProviders=STANDARD
 #auth.ldapServerUrl=[LDAP Server URL, including port of your LDAP server]
 #auth.ldapUserDnPattern=[LDAP User Dn Pattern, where the username is replaced with '{0}']
 " > $INSTALLPATH/api/api.properties
+chown $USER:$USER $INSTALLPATH/api/api.properties
 
 #Create UI start
 
-echo "gulp serve" > $INSTALLPATH/UI/startui.sh
+echo "gulp serve " > $INSTALLPATH/UI/startui.sh
 chmod +x $INSTALLPATH/UI/startui.sh
-chown +x $USER $INSTALLPATH/UI/startui.sh
+chown  $USER $INSTALLPATH/UI/startui.sh
 
 #Create API start
-echo "java -jar api.jar --spring.config.location=$INSTALLPATH/api/api.properties -Djasypt.encryptor.password=$ENCRYPTORPASSWORD" > $INSTALLPATH/api/startapi.sh
+echo "java -jar api.jar --spring.config.location=$INSTALLPATH/api/api.properties -Djasypt.encryptor.password=$ENCRYPTORPASSWORD " > $INSTALLPATH/api/startapi.sh
 chmod +x $INSTALLPATH/api/startapi.sh
-chown $USER $INSTALLPATH/api/startapi.sh
+chown $USER:$USER $INSTALLPATH/api/startapi.sh
+
