@@ -12,7 +12,7 @@ ps -ef | grep api.jar | grep -v "grep" | awk '{print $2}'
 }
 
 start () { 
-java -jar api.jar --spring.config.location=/usr/local/src/hygieia/api/api.properties -Djasypt.encryptor.password=$ENCRYPTORPASSWORD
+java -jar api.jar --spring.config.location=/usr/local/src/hygieia/api/api.properties -Djasypt.encryptor.password=$ENCRYPTORPASSWORD &
 }
 
 stop () {
