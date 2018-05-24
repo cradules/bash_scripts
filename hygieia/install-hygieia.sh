@@ -4,7 +4,7 @@ set -x
 
 
 #Var
-PATH=$PATH:/usr/local/src/apache-maven/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/centos/.local/bin:/home/centos/bin
+export PATH=/bin:/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/src/apache-maven/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/centos/.local/bin:/home/centos/bin
 
 DISK=$1
 INSTALLPATH=/usr/local/src/hygieia
@@ -14,6 +14,15 @@ LVNAME=lvhygieia
 GITSOURCE="https://github.com/capitalone/Hygieia.git"
 ENCRYPTORPASSWORD="hygieiasecret"
 CDISK=$(ls -al /dev/ | grep -c $DISK 2> /dev/null) 
+MVNURL="http://apache.javapipe.com/maven/maven-3/3.1.1/binaries/apache-maven-3.1.1-bin.tar.gz"
+
+mvntar() {
+MVNTAR=$(ls -al | grep maven | awk '{print $9}')
+}
+
+fld(){
+FLD=$(ls -al | grep maven | awk '{print $9}' | grep "tar.gz" | awk -F '-' '{print $1"-"$2"-"$3}')
+}
 
 
 disksize() { 
@@ -90,8 +99,10 @@ RC=$(echo $?)
 #Install git
 	if [[ $(rpm -qa | grep -w -c git) -ne 1 ]]
 		then
-		yum install git
+		yum -y install git
 	fi
+#install bzip2
+	yum -y install bzip2
 
 
 #Install mongoDB
@@ -116,16 +127,20 @@ gpgkey=https://www.mongodb.org/static/pgp/server-3.6.asc
 	fi
 #Installing java
 yum install -y java-1.8.0-openjdk-devel
+#Install bower
+npm install  -g bower
 
 #Installing mvn
 	if [[ ! -d /usr/local/src/apache-maven ]]
 		then
 		cd /usr/local/src
-		yum install wget
-		wget http://www-us.apache.org/dist/maven/maven-3/3.5.2/binaries/apache-maven-3.5.2-bin.tar.gz
-		tar -xf apache-maven-3.5.2-bin.tar.gz
-		rm -f apache-maven-3.5.2-bin.tar.gz
-		mv apache-maven-3.5.2/ apache-maven/
+		yum -y install wget
+		wget $MVNURL 
+		mvntar
+		fld
+		tar -xf $MVNTAR
+		mv $FLD apache-maven/
+		rm -f $MVNTAR
 echo "
 # Apache Maven Environment Variables
 # MAVEN_HOME for Maven 1 - M2_HOME for Maven 2
@@ -139,11 +154,10 @@ mvn --version
 		echo "Maven already present.."
 	fi
 
-
 #Install node js
 	 if [[ $(rpm -qa | grep -c nodejs) -ne 1 ]]
 		then
-		curl --silent --location https://rpm.nodesource.com/setup_10.x | bash -
+		curl --silent --location https://rpm.nodesource.com/setup_8.x | sudo bash -
 		yum clean expire-cache
 		yum -y install nodejs
 	else
@@ -172,7 +186,8 @@ sleep 2
 
 echo "
 npm install gulp
-npm install bower
+npm install  bower
+npm install browser-sync
 npm install
 bower install
 mvn clean install package
@@ -191,6 +206,7 @@ npm install gulp
 npm install bower
 npm install
 bower install
+npm install browser-sync
 mvn clean install package
 " > $INSTALLPATH/install.sh
 chmod +x $INSTALLPATH//install.sh
