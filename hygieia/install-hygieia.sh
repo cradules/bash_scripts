@@ -15,6 +15,7 @@ GITSOURCE="https://github.com/capitalone/Hygieia.git"
 ENCRYPTORPASSWORD="hygieiasecret"
 CDISK=$(ls -al /dev/ | grep -c $DISK 2> /dev/null) 
 MVNURL="http://apache.javapipe.com/maven/maven-3/3.1.1/binaries/apache-maven-3.1.1-bin.tar.gz"
+HRELEASE="https://github.com/capitalone/Hygieia/archive/Hygieia-2.0.4.tar.gz"
 
 mvntar() {
 MVNTAR=$(ls -al | grep maven | awk '{print $9}')
@@ -49,6 +50,19 @@ pvdisplay /dev/$DISK | grep "PV Size" | awk '{print $3}' | awk -F '.' '{print $1
 		echo "Disk not found"
 		exit 1
 	fi
+#Create user
+id $USER &> /dev/null
+RC=$(echo $?)
+        if [[ $RC -ne 0 ]]
+                then
+                echo "Adding user $USER"
+                adduser $USER
+                #Setting owner and permisions
+
+        else
+                echo "User $USER already exist"
+        fi
+
 
 #Create mount point
 	if [[ $(grep -c $LVNAME /etc/mtab) -eq 0 && $CDISK -eq 1 ]]
@@ -78,19 +92,6 @@ pvdisplay /dev/$DISK | grep "PV Size" | awk '{print $3}' | awk -F '.' '{print $1
 			chown $USER:$USER $INSTALLPATH
 		fi
 		echo "File-system already exist"
-	fi
-
-#Create user
-id $USER &> /dev/null
-RC=$(echo $?)
-	if [[ $RC -ne 0 ]]
-		then
-		echo "Adding user $USER"
-		adduser $USER
-		#Setting owner and permisions
-		
-	else
-		echo "User $USER already exist"
 	fi
 
 #Setting owner and permisions
@@ -165,21 +166,27 @@ mvn --version
 	fi
 
 
-#Clone source
+#Download source
 	if [ "$(ls -A $INSTALLPATH)" ]
 		then
 		echo "$INSTALLPATH not empty"
 		exit 1
 	else
-        	su -c "git clone $GITSOURCE $INSTALLPATH" $USER
+		cd /usr/local/src
+		wget $HRELEASE
+		HYTAR=$(ls -al | grep Hygieia | grep "tar.gz" | awk '{print $9}')
+		tar -xf $HYTAR
+		HYGIEIA=$(ls -al | grep Hygieia | grep -v "tar.gz" | awk '{print $9}')
+		mv $HYGIEIA $INSTALLPATH
+		rm -f $HYTA
 		#Setup binary
 		mkdir -p $INSTALLPATH/bin
-		chown $USER:$USER $INSTALLPATH/bin
 		cp ./initapi.sh $INSTALLPATH/bin
+		chown $USER:$USER $INSTALLPATH
 
 	fi
 
-
+exit 0
 #Compile UI
 echo "Compling source code. This might take a while.. time to have a coffe"
 sleep 2
