@@ -1,18 +1,18 @@
 #!/bin/bash
 
 ##########################################################
-#Description: Starts Hygieia
+#Description: Starts Hygieia UI
 #Author: Constantin Radulescu
 #########################################################
 
-ENCRYPTORPASSWORD="hygieiasecret"
 
 pid () {
-ps -ef | grep api.jar | grep -v "grep" | awk '{print $2}'
+netstat -tenpl | grep 3000 | awk '{print $9}' | awk -F '/' '{print $1}'
 }
 
 start () { 
-java -jar /usr/local/src/hygieia/api/target/api.jar --spring.config.location=/usr/local/src/hygieia/api/api.properties -Djasypt.encryptor.password=$ENCRYPTORPASSWORD &
+cd /usr/local/src/hygieia/UI/
+./startui.sh
 }
 
 stop () {

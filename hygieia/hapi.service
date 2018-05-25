@@ -1,0 +1,12 @@
+[Unit]
+Description=Hygieia Api
+After=basic.target
+
+[Service]
+User=hygieia
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/initapi.sh start
+ExecStop=/usr/local/bin/initapi.sh stop
+[Install]
+WantedBy=basic.target

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+#set -x
 
 
 
@@ -85,25 +85,13 @@ RC=$(echo $?)
 		else
 			"ERROR..I could not mount the file-system"
 		fi
-	else
-		if [[ ! -d $INSTALLPATH ]]
-			then
-			mkdir -p $INSTALLPATH
-			chown $USER:$USER $INSTALLPATH
-		fi
-		echo "File-system already exist"
 	fi
 
-#Setting owner and permisions
-                chown -R $USER:$USER $INSTALLPATH
-
-#Install git
-	if [[ $(rpm -qa | grep -w -c git) -ne 1 ]]
-		then
-		yum -y install git
-	fi
-#install bzip2
-	yum -y install bzip2
+#Needfull
+yum -y install git
+yum -y install bzip2
+yum -y install net-tools
+yum -y install iptables-services
 
 
 #Install mongoDB
@@ -129,7 +117,8 @@ gpgkey=https://www.mongodb.org/static/pgp/server-3.6.asc
 #Installing java
 yum install -y java-1.8.0-openjdk-devel
 #Install bower
-npm install  -g bower
+/usr/bin/npm install -g bower
+/usr/bin/npm install -g gulp
 
 #Installing mvn
 	if [[ ! -d /usr/local/src/apache-maven ]]
@@ -167,35 +156,50 @@ mvn --version
 
 
 #Download source
-	if [ "$(ls -A $INSTALLPATH)" ]
-		then
-		echo "$INSTALLPATH not empty"
-		exit 1
+
+	if [[ $1 = "nodisk" ]]
+		then	
+		if [[ -d $INSTALLPATH || $(ls -A $INSTALLPATH) ]]
+			then
+			echo "$INSTALLPATH not empty"
+			exit 1
+		else
+			cd /usr/local/src
+			wget $HRELEASE
+			HYTAR=$(ls -al | grep Hygieia | grep "tar.gz" | awk '{print $9}')
+			tar -xf $HYTAR
+			HYGIEIA=$(ls -al | grep Hygieia | grep -v "tar.gz" | awk '{print $9}')
+			mv $HYGIEIA hygieia 
+			rm -f $HYTAR
+			#Setup binary
+			mkdir -p $INSTALLPATH/bin
+			chown -R $USER:$USER $INSTALLPATH
+		fi
 	else
-		cd /usr/local/src
+		cd $INSTALLPATH
 		wget $HRELEASE
 		HYTAR=$(ls -al | grep Hygieia | grep "tar.gz" | awk '{print $9}')
 		tar -xf $HYTAR
 		HYGIEIA=$(ls -al | grep Hygieia | grep -v "tar.gz" | awk '{print $9}')
-		mv $HYGIEIA $INSTALLPATH
-		rm -f $HYTA
-		#Setup binary
-		mkdir -p $INSTALLPATH/bin
-		cp ./initapi.sh $INSTALLPATH/bin
-		chown $USER:$USER $INSTALLPATH
+		cd $HYGIEIA
+		mv * ..; cd ..
+		rmdir $HYGIEIA; rm -f $HYTAR
+		chown -R $USER:$USER $INSTALLPAT
+		
+		
+		
 
 	fi
 
-exit 0
 #Compile UI
 echo "Compling source code. This might take a while.. time to have a coffe"
 sleep 2
 
 echo "
-npm install gulp
-npm install  bower
-npm install browser-sync
-npm install
+/usr/bin/npm install gulp
+/usr/bin/npm install  bower
+/usr/bin/npm install browser-sync
+/usr/bin/npm install
 bower install
 mvn clean install package
 " > $INSTALLPATH/UI/installUI.sh
@@ -209,11 +213,11 @@ echo "UI install done"
 
 
 echo "
-npm install gulp
-npm install bower
-npm install
+/usr/bin/npm install gulp
+/usr/bin/npm install bower
+/usr/bin/npm install
 bower install
-npm install browser-sync
+/usr/bin/npm install browser-sync
 mvn clean install package
 " > $INSTALLPATH/install.sh
 chmod +x $INSTALLPATH//install.sh
@@ -253,13 +257,13 @@ auth.authenticationProviders=STANDARD
 chown $USER:$USER $INSTALLPATH/api/api.properties
 
 #Create UI start
-
-echo "gulp serve " > $INSTALLPATH/UI/startui.sh
+echo "npm install gulp" > $INSTALLPATH/UI/startui.sh
+echo "gulp serve &" >> $INSTALLPATH/UI/startui.sh
 chmod +x $INSTALLPATH/UI/startui.sh
 chown  $USER $INSTALLPATH/UI/startui.sh
 
 #Create API start
-echo "java -jar api.jar --spring.config.location=$INSTALLPATH/api/api.properties -Djasypt.encryptor.password=$ENCRYPTORPASSWORD " > $INSTALLPATH/api/startapi.sh
+echo "java -jar $INSTALLPATH/UI/target/api.jar --spring.config.location=$INSTALLPATH/api/api.properties -Djasypt.encryptor.password=$ENCRYPTORPASSWORD " > $INSTALLPATH/api/startapi.sh
 chmod +x $INSTALLPATH/api/startapi.sh
 chown $USER:$USER $INSTALLPATH/api/startapi.sh
 

@@ -1,0 +1,12 @@
+[Unit]
+Description=Hygieia UI 
+After=basic.target
+
+[Service]
+User=hygieia
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/initui.sh start
+ExecStop=/usr/local/bin/initui.sh stop
+[Install]
+WantedBy=basic.target
