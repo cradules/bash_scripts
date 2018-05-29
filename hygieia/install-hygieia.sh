@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -x
+set -x
 
 
 
@@ -12,10 +12,14 @@ USER=hygieia
 VGNAME=vghygieia
 LVNAME=lvhygieia
 GITSOURCE="https://github.com/capitalone/Hygieia.git"
-ENCRYPTORPASSWORD="hygieiasecret"
 CDISK=$(ls -al /dev/ | grep -c $DISK 2> /dev/null) 
 MVNURL="http://apache.javapipe.com/maven/maven-3/3.1.1/binaries/apache-maven-3.1.1-bin.tar.gz"
 HRELEASE="https://github.com/capitalone/Hygieia/archive/Hygieia-2.0.4.tar.gz"
+DASHBOARDDB=
+DASHBOARDUSER=
+DBPASSWORD=
+ENCRYPTORPASSWORD=
+
 
 mvntar() {
 MVNTAR=$(ls -al | grep maven | awk '{print $9}')
@@ -50,6 +54,33 @@ pvdisplay /dev/$DISK | grep "PV Size" | awk '{print $3}' | awk -F '.' '{print $1
 		echo "Disk not found"
 		exit 1
 	fi
+
+#Colect Data
+
+	while [[ $DASHBOARDDB = "" ]]
+		do
+                echo "Please provide dabase name: [Enter]"
+                read DASHBOARDDB
+        done
+
+        while [[ $DASHBOARDUSER = "" ]]
+                do
+                echo "Please provide dabase user: [Enter]"
+                read DASHBOARDUSER
+        done
+
+        while [[ $DBPASSWORD = "" ]]
+                do
+                echo "Please provide dabase user password: [Enter]"
+                read DBPASSWORD
+        done
+
+        while [[ $ENCRYPTORPASSWORD = "" ]]
+                do
+                echo "Please provide encryptor password: [Enter]"
+                read ENCRYPTORPASSWORD
+        done
+
 #Create user
 id $USER &> /dev/null
 RC=$(echo $?)
@@ -110,7 +141,7 @@ gpgkey=https://www.mongodb.org/static/pgp/server-3.6.asc
 		yum install -y mongodb-org
 		systemctl start mongod
 		systemctl enable mongod
-		/usr/bin/mongo localhost/admin  --eval 'db.getSiblingDB("dashboarddb").createUser({user: "dashboarduser", pwd: "dbpassword", roles: [{role: "readWrite", db: "dashboarddb"}]})'
+		/usr/bin/mongo localhost/admin  --eval 'db.getSiblingDB('\"$DASHBOARDD\"').createUser({user: '\"$DASHBOARDUSER\"', pwd: '\"$DBPASSWORD\"', roles: [{role: "readWrite", db: '\"$DASHBOARDD\"'}]})'
 	else
 		echo "MongoDB is alreay present. Make sure you have setup the use and the password for the database"
 	fi
@@ -182,9 +213,9 @@ mvn --version
 		tar -xf $HYTAR
 		HYGIEIA=$(ls -al | grep Hygieia | grep -v "tar.gz" | awk '{print $9}')
 		cd $HYGIEIA
-		mv * ..; cd ..
-		rmdir $HYGIEIA; rm -f $HYTAR
-		chown -R $USER:$USER $INSTALLPAT
+		mv * ..; mv ".mvn" ..; cd ..
+		rm -rf $HYGIEIA; rm -f $HYTAR
+		chown -R $USER:$USER $INSTALLPATH
 		
 		
 		
@@ -233,9 +264,9 @@ echo "Full install done"
 
 echo "
 # api.properties
-dbname=dashboarddb
-dbusername=dashboarduser
-dbpassword=dbpassword
+dbname=$DASHBOARDDB
+dbusername=$DASHBOARDUSER
+dbpassword=$DBPASSWORD
 dbhost=localhost
 dbport=27017
 dbreplicaset=false
@@ -263,7 +294,7 @@ chmod +x $INSTALLPATH/UI/startui.sh
 chown  $USER $INSTALLPATH/UI/startui.sh
 
 #Create API start
-echo "java -jar $INSTALLPATH/UI/target/api.jar --spring.config.location=$INSTALLPATH/api/api.properties -Djasypt.encryptor.password=$ENCRYPTORPASSWORD " > $INSTALLPATH/api/startapi.sh
+echo "java -jar $INSTALLPATH/api/target/api.jar --spring.config.location=$INSTALLPATH/api/api.properties -Djasypt.encryptor.password=$ENCRYPTORPASSWORD " > $INSTALLPATH/api/startapi.sh
 chmod +x $INSTALLPATH/api/startapi.sh
 chown $USER:$USER $INSTALLPATH/api/startapi.sh
 
