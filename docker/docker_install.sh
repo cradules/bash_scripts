@@ -57,7 +57,7 @@ systemctl enable docker
 systemctl start docker
 
 #Install pip
-yum install python2-pip
+yum install python2-pip -y
 pip install --upgrade pip
 
 #Install docker-compose
