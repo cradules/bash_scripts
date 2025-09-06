@@ -1,0 +1,92 @@
+stages: [.pre, preflight, test, build, release, plan, deploy, .post]
+
+debug:kubecontext:
+  stage: preflight
+  image: bitnami/kubectl:1.30
+  variables:
+    EXPECTED_PROVIDER: "hetzner-eu-central-prod"
+    # CI_DEBUG_TRACE: "true"  # uncomment for very verbose shell output
+  script: |
+    set -euo pipefail
+    echo ">>> KUBECONFIG=${KUBECONFIG:-}"
+    if [ -z "${KUBECONFIG:-}" ]; then
+      echo "No KUBECONFIG present. Is the Agent authorized for this project/job?"
+      exit 1
+    fi
+
+    echo ">>> Available contexts:"
+    kubectl config get-contexts
+
+    echo ">>> Selecting context that contains: ${EXPECTED_PROVIDER}"
+    KUBE_CONTEXT="$(kubectl config get-contexts -o name | grep -F "${EXPECTED_PROVIDER}" | head -n1 || true)"
+    echo ">>> Selected KUBE_CONTEXT=${KUBE_CONTEXT}"
+    if [ -z "${KUBE_CONTEXT}" ]; then
+      echo "Could not find an Agent context containing: ${EXPECTED_PROVIDER}"
+      exit 1
+    fi
+
+    kubectl config use-context "${KUBE_CONTEXT}"
+
+    echo ">>> kubectl auth whoami"
+    who="$(kubectl auth whoami 2>&1 || true)"
+    echo "${who}"
+    if echo "${who}" | grep -q 'system:serviceaccount:gitlab-runner:default'; then
+      echo "ERROR: Using runner SA; aborting."
+      exit 1
+    fi
+
+    printf "KUBE_CONTEXT=%s\n" "${KUBE_CONTEXT}" > kube.env
+  artifacts:
+    reports:
+      dotenv: kube.env
+  rules:
+    - when: always
+
+debug:service-account:
+  stage: preflight
+  image: bitnami/kubectl:1.30
+  needs:
+    - job: debug:kubecontext
+      artifacts: true
+  variables:
+    # CI_DEBUG_TRACE: "true"  # uncomment for very verbose shell output
+  script: |
+    set -euo pipefail
+
+    echo ">>> Loading kube context from previous job"
+    echo "KUBE_CONTEXT=${KUBE_CONTEXT}"
+    kubectl config use-context "${KUBE_CONTEXT}"
+
+    echo ">>> Current service account information:"
+    echo "kubectl auth whoami:"
+    kubectl auth whoami
+
+    echo ""
+    echo ">>> Current user/service account details:"
+    kubectl auth whoami -o yaml
+
+    echo ""
+    echo ">>> Current namespace:"
+    kubectl config view --minify --output 'jsonpath={..namespace}'
+    echo ""
+
+    echo ">>> Checking permissions:"
+    echo "Can I list pods?"
+    kubectl auth can-i list pods || echo "Cannot list pods"
+
+    echo "Can I create deployments?"
+    kubectl auth can-i create deployments || echo "Cannot create deployments"
+
+    echo "Can I get secrets?"
+    kubectl auth can-i get secrets || echo "Cannot get secrets"
+
+    echo ""
+    echo ">>> Available namespaces (if permitted):"
+    kubectl get namespaces 2>/dev/null || echo "Cannot list namespaces"
+
+    echo ""
+    echo ">>> Current context details:"
+    kubectl config current-context
+    kubectl config view --minify
+  rules:
+    - when: always

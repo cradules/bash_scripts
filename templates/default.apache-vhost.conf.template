@@ -1,6 +1,6 @@
 <VirtualHost *:80>
-    ServerAdmin admin@quanticedge.ro 
-    ServerName sid.quanticedge.ro 
+    ServerAdmin admin@example.com
+    ServerName sid.example.com
     ProxyPreserveHost On
     SSLProxyEngine On
     SSLProxyCheckPeerCN on

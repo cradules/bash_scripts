@@ -5,7 +5,14 @@
 #Author: Constantin Radulescu
 #########################################################
 
-ENCRYPTORPASSWORD="hygieiasecret"
+# Load encryptor password from environment variable or config file
+ENCRYPTORPASSWORD="${HYGIEIA_ENCRYPTOR_PASSWORD:-}"
+
+if [ -z "$ENCRYPTORPASSWORD" ]; then
+    echo "Error: HYGIEIA_ENCRYPTOR_PASSWORD environment variable is not set"
+    echo "Please set it with: export HYGIEIA_ENCRYPTOR_PASSWORD='your_password'"
+    exit 1
+fi
 
 pid () {
 ps -ef | grep api.jar | grep -v "grep" | awk '{print $2}'

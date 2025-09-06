@@ -1,0 +1,7 @@
+<div class="cam">
+  <h2 style="font-family:verdana;">CAMNR</h2>
+  <a href="camnr.html">
+  <p><img style="-webkit-user-select: none;" src="MACURL" width="480px" height="240px">.</p>
+  </a>
+   <a href="CAMURL" class="button" target="_blank">CAMNR Control Panel</a>
+</div>
